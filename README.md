@@ -1,1 +1,0 @@
-# machine-learning-and-iot-based-air-quality-detector
