@@ -22,8 +22,8 @@ DHT11 dht(14);
 // Wi-Fi dan Firebase credentials
 #define WIFI_SSID "Fiaa"
 #define WIFI_PASSWORD "12345678"
-#define API_KEY "AIzaSyA_T9-TM4ijLO8LXh9MpJivLYfsmAr5Rt8"
-#define DATABASE_URL "https://iot-x-ml-5e0a7-default-rtdb.asia-southeast1.firebasedatabase.app/"
+#define API_KEY "ur token"
+#define DATABASE_URL "firebase"
 
 // Firebase objects
 FirebaseData fbdo;
