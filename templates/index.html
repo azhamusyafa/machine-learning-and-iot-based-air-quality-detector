@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Air Quality Monitoring System</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js"></script>
+</head>
+<body class="bg-gray-100">
+    <div class="container mx-auto px-4 py-8">
+        <h1 class="text-3xl font-bold text-center mb-8">Air Quality Monitoring System</h1>
+        
+        <!-- Sensor Data Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="bg-white rounded-lg shadow p-6">
+                <h2 class="text-xl font-semibold mb-4">Air Quality</h2>
+                <p class="text-4xl font-bold text-blue-600" id="airQuality">-</p>
+                <p class="text-gray-500 mt-2" id="airQualityStatus">Loading...</p>
+            </div>
+            <div class="bg-white rounded-lg shadow p-6">
+                <h2 class="text-xl font-semibold mb-4">Temperature</h2>
+                <p class="text-4xl font-bold text-red-600" id="temperature">-</p>
+                <p class="text-gray-500 mt-2">°C</p>
+            </div>
+            <div class="bg-white rounded-lg shadow p-6">
+                <h2 class="text-xl font-semibold mb-4">Humidity</h2>
+                <p class="text-4xl font-bold text-green-600" id="humidity">-</p>
+                <p class="text-gray-500 mt-2">%</p>
+            </div>
+        </div>
+
+        <!-- Prediction Section -->
+        <div class="bg-white rounded-lg shadow p-6 mb-8">
+            <h2 class="text-xl font-semibold mb-4">Air Quality Prediction</h2>
+            <button id="predictBtn" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                Make Prediction
+            </button>
+            <div class="mt-4">
+                <p class="font-semibold">Prediction Result: <span id="predictionResult" class="text-purple-600">-</span></p>
+                <p class="text-sm text-gray-500" id="predictionTime"></p>
+            </div>
+        </div>
+
+        <!-- Charts -->
+        <div class="grid grid-cols-1 gap-6">
+            <!-- Air Quality Chart -->
+            <div class="bg-white rounded-lg shadow p-6">
+                <h2 class="text-xl font-semibold mb-4">Air Quality History</h2>
+                <canvas id="airQualityChart"></canvas>
+            </div>
+            
+            <!-- Temperature Chart -->
+            <div class="bg-white rounded-lg shadow p-6">
+                <h2 class="text-xl font-semibold mb-4">Temperature History</h2>
+                <canvas id="temperatureChart"></canvas>
+            </div>
+            
+            <!-- Humidity Chart -->
+            <div class="bg-white rounded-lg shadow p-6">
+                <h2 class="text-xl font-semibold mb-4">Humidity History</h2>
+                <canvas id="humidityChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize Charts
+        function createChart(ctx, label, color) {
+            return new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: label,
+                        data: [],
+                        borderColor: color,
+                        tension: 0.1,
+                        fill: false
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: true
+                        }
+                    }
+                }
+            });
+        }
+
+        const airQualityChart = createChart(
+            document.getElementById('airQualityChart').getContext('2d'),
+            'Air Quality',
+            'rgb(59, 130, 246)' // blue
+        );
+
+        const temperatureChart = createChart(
+            document.getElementById('temperatureChart').getContext('2d'),
+            'Temperature (°C)',
+            'rgb(239, 68, 68)' // red
+        );
+
+        const humidityChart = createChart(
+            document.getElementById('humidityChart').getContext('2d'),
+            'Humidity (%)',
+            'rgb(34, 197, 94)' // green
+        );
+
+        // Function to update chart data
+        function updateChart(chart, newData, timestamp) {
+            chart.data.labels.push(timestamp);
+            chart.data.datasets[0].data.push(newData);
+            
+            // Keep only last 10 data points
+            if (chart.data.labels.length > 10) {
+                chart.data.labels.shift();
+                chart.data.datasets[0].data.shift();
+            }
+            
+            chart.update();
+        }
+
+        // Update sensor data every 5 seconds
+        function updateSensorData() {
+            fetch('/get_sensor_data')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Update displayed values
+                        document.getElementById('airQuality').textContent = data.airQuality;
+                        document.getElementById('temperature').textContent = data.temperature;
+                        document.getElementById('humidity').textContent = data.humidity;
+
+                        // Update air quality status
+                        let status = '';
+                        if (data.airQuality <= 200) {
+                            status = 'Good';
+                            document.getElementById('airQualityStatus').className = 'text-green-500 mt-2';
+                        } else if (data.airQuality <= 300) {
+                            status = 'Moderate';
+                            document.getElementById('airQualityStatus').className = 'text-yellow-500 mt-2';
+                        } else {
+                            status = 'Poor';
+                            document.getElementById('airQualityStatus').className = 'text-red-500 mt-2';
+                        }
+                        document.getElementById('airQualityStatus').textContent = status;
+
+                        // Update all charts
+                        updateChart(airQualityChart, data.airQuality, data.timestamp);
+                        updateChart(temperatureChart, data.temperature, data.timestamp);
+                        updateChart(humidityChart, data.humidity, data.timestamp);
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+        }
+
+        // Handle prediction button click
+        document.getElementById('predictBtn').addEventListener('click', function() {
+            fetch('/predict')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        document.getElementById('predictionResult').textContent = data.prediction;
+                        document.getElementById('predictionTime').textContent = `Prediction made at ${data.timestamp}`;
+                    } else {
+                        document.getElementById('predictionResult').textContent = 'Error making prediction';
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+        });
+
+        // Initial update and set interval
+        updateSensorData();
+        setInterval(updateSensorData, 5000);
+    </script>
+</body>
+</html>
