@@ -8,9 +8,9 @@ from datetime import datetime
 app = Flask(__name__)
 
 # Initialize Firebase Admin
-cred = credentials.Certificate("E:\kuliah\iot x ml\iot-x-ml-5e0a7-firebase-adminsdk-ivniz-8003ac9b57.json")
+cred = credentials.Certificate("your path")
 firebase_admin.initialize_app(cred, {
-    'databaseURL': 'https://iot-x-ml-5e0a7-default-rtdb.asia-southeast1.firebasedatabase.app/'
+    'databaseURL': 'firebase url'
 })
 
 # Load the ML model
